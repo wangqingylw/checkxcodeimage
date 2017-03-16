@@ -114,19 +114,7 @@ vector<string> getImages(string path)
     return images;
 }
 
-map<string, int> initCheckMap(vector<string> images)
-{
-    map<string, int> res;
-
-    for (vector<string>::const_iterator imagePoint = images.cbegin(); imagePoint != images.cend(); imagePoint++)
-    {
-        res[*imagePoint] = 0;
-    }
-
-    return res;
-}
-
-void checkForFile(string path, map<string, int> &res)
+void checkForFile(string path, vector<string> &images)
 {
     if (isDir(path))
     {
@@ -142,33 +130,18 @@ void checkForFile(string path, map<string, int> &res)
     string contents((istreambuf_iterator<char>(t)),  
                  istreambuf_iterator<char>());
 
-    vector<string> tmp;
 
-    for (map<string, int>::const_iterator p = res.cbegin();
-         p != res.cend();
-         p++)
+    for (vector<string>::const_iterator p = images.cbegin();
+         p != images.cend();
+    )
     {
-         //string pattern = "\"" + p->first + "\"";
-
-        //size_t pos = contents.find(pattern);
-
-        // if (pos != contents.npos)
-        // {
-        //     tmp.push_back(p->first);
-        // }
-
-
-        if ( strstr(contents.c_str(), ("\"" + p->first + "\"").c_str()) != NULL ) {
-            tmp.push_back(p->first);
+        if ( strstr(contents.c_str(), ("\"" + (*p) + "\"").c_str()) != NULL ) {
+            p = images.erase(p);
+        } else {
+            ++p;
         }
     }
 
-    for (vector<string>::const_iterator p = tmp.cbegin();
-         p != tmp.cend();
-         p++)
-    {
-        res.erase(*p);
-    }
 
     buffer.clear();
     t.close();
@@ -176,7 +149,7 @@ void checkForFile(string path, map<string, int> &res)
     //cout << path << " check over!" << endl;
 }
 
-void checkForDir(string path, map<string, int> &res)
+void checkForDir(string path, vector<string> &images)
 {
     if (!isDir(path))
     {
@@ -212,7 +185,6 @@ void checkForDir(string path, map<string, int> &res)
             base = baseAndExt[0];
             ext = baseAndExt[1];
         }
-
         
         if (!isDir(filename))
         {
@@ -220,13 +192,13 @@ void checkForDir(string path, map<string, int> &res)
             if (ext == ".m" || ext == ".h" || ext == ".xib" || ext == ".swift")
             {
                 string fullpath = path + "/" + string(filename->d_name);
-                checkForFile(fullpath, res);
+                checkForFile(fullpath, images);
             }
         }
         else
         {
             string fullpath = path + "/" + string(filename->d_name);
-            checkForDir(fullpath, res);
+            checkForDir(fullpath, images);
         }
     }
 }
@@ -243,25 +215,22 @@ int main()
 
     vector<string> images = getImages(assetspath);
 
-    map<string, int> res = initCheckMap(images);
-
-    checkForDir(checkpath, res);
+    checkForDir(checkpath, images);
 
 
-    for (map<string, int>::const_iterator p = res.cbegin();
-         p != res.cend();
+    for (vector<string>::const_iterator p = images.cbegin();
+         p != images.cend();
          p++)
     {
 
-        string pattern = p->first;
 
-        cout << pattern << endl;
+        cout << (*p) << endl;
     }
 
     finish = clock();
 
     cout << "=======================" << endl
-         << "total :" << res.size() << endl
+         << "total :" << images.size() << endl
          << "cost : " << (double)(finish - start) / CLOCKS_PER_SEC << " seconds!" << endl;
 
     return 0;
